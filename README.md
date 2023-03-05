@@ -1,5 +1,6 @@
 # Welcome to MLSA Blazor Outlook Calendar!
 It's a Calendar and events application that is synced and integrated with Microsoft Outlook Calendar using Microsoft Graph API.
+## [🔗Preview Deployed Link](https://blazorhosting.z13.web.core.windows.net/)
 ## Objectives
 - View all events on your calendar
 - Add events to my calender
