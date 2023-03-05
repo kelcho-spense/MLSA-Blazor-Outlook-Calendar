@@ -5,6 +5,14 @@ It's a Calendar and events application that is synced and integrated with Micros
 - Add events to my calender
 - View a summary of events per day
 
+## ScreenShots
+- LoginPage
+![0](https://user-images.githubusercontent.com/57180726/222939196-9cf02eb5-1c05-406e-b335-eb705db58d28.PNG)
+- HomePage
+![1](https://user-images.githubusercontent.com/57180726/222939205-d6365220-fbe8-4aa7-9a40-3dc383328bc4.PNG)
+![2](https://user-images.githubusercontent.com/57180726/222939220-722b0366-e47e-4c9c-8a2d-d262fc63a7b2.PNG)
+
+
 ## How to make this app works
 
  - Clone this repository locally to your machine.
