@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using BlazorCalendar.Models;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
+using Microsoft.Graph;
+using Microsoft.Kiota.Abstractions.Authentication;
 using Newtonsoft.Json;
 
 namespace BlazorCalendar.Services
@@ -12,12 +15,12 @@ namespace BlazorCalendar.Services
     {
 
         // Get Access token 
-        private readonly IAccessTokenProvider _accessTokenProvider;
+        private readonly Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider _accessTokenProvider;
         private readonly HttpClient _httpClient;
 
         private const string BASE_URL = "https://graph.microsoft.com/v1.0/me/events";
 
-        public MicrosoftCalendarEventsProvider(IAccessTokenProvider accessTokenProvider, HttpClient httpClient)
+        public MicrosoftCalendarEventsProvider(Microsoft.AspNetCore.Components.WebAssembly.Authentication.IAccessTokenProvider accessTokenProvider, HttpClient httpClient)
         {
             _accessTokenProvider = accessTokenProvider;
             _httpClient = httpClient;
@@ -27,7 +30,7 @@ namespace BlazorCalendar.Services
         {
             // 1- Get Token 
             var accessToken = await GetAccessTokenAsync();
-            if(accessToken == null)
+            if (accessToken == null)
                 return null;
 
             // 2- Set the access token in the authorization header 
@@ -36,13 +39,13 @@ namespace BlazorCalendar.Services
             // 3-  Send the request 
             var response = await _httpClient.GetAsync(ConstructGraphUrl(year, month));
 
-            if(!response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
                 return null;
             }
 
             // 4- Read the content 
-            var contentAsString = await response.Content.ReadAsStringAsync(); 
+            var contentAsString = await response.Content.ReadAsStringAsync();
 
             var microsoftEvents = JsonConvert.DeserializeObject<GraphEventsResponse>(contentAsString);
 
@@ -63,43 +66,40 @@ namespace BlazorCalendar.Services
 
         public async Task AddEventAsync(CalendarEvent calendarEvent)
         {
-             // 1- Get Token 
-            var accessToken = await GetAccessTokenAsync();
-            if(accessToken == null)
-            {
-                Console.WriteLine("Access Token is not available");
-                return;
-            }
 
-            // 2- Set the access token in the authorization header 
-            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", accessToken);
+            var graphClient = await BuildGraphClientAsync();
 
-            // 3- Initialize the content of the post request 
-            string eventAsJson = JsonConvert.SerializeObject(new MicrosoftGraphEvent
+            // Send the request
+
+            var requestBody = new Microsoft.Graph.Models.Event
             {
                 Subject = calendarEvent.Subject,
-                Start = new DateTimeTimeZone 
+                Start = new DateTimeTimeZone
                 {
                     DateTime = calendarEvent.StartDate.ToString(),
                     TimeZone = TimeZoneInfo.Local.Id
                 },
-                End = new DateTimeTimeZone 
+                End = new DateTimeTimeZone
                 {
                     DateTime = calendarEvent.EndDate.ToString(),
                     TimeZone = TimeZoneInfo.Local.Id,
                 }
-            });
+            };
+            var response = await graphClient.Me.Events.PostAsync(requestBody);
+            Console.WriteLine(response);
 
-            var content = new StringContent(eventAsJson);
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json"); 
+            // if(!response.IsSuccessStatusCode)
+            // {
+            //     throw new Exception("Error while adding the event");
+            // }
+        }
 
-            // Send the request
-            var response = await _httpClient.PostAsync(BASE_URL, content);
-
-            if(response.IsSuccessStatusCode)
-                Console.WriteLine("Event has been added successfully!");
-            else
-                Console.WriteLine(response.StatusCode);
+        private async Task<GraphServiceClient> BuildGraphClientAsync()
+        {
+            var token = await GetAccessTokenAsync();
+            var tokenProvider = new GraphTokenProvider(token);
+            var authProvider = new BaseBearerTokenAuthenticationProvider(tokenProvider);
+            return new GraphServiceClient(authProvider);
         }
 
         private async Task<string> GetAccessTokenAsync()
@@ -110,20 +110,38 @@ namespace BlazorCalendar.Services
             });
 
             // Try to fetch the token 
-            if(tokenRequest.TryGetToken(out var token))
+            if (tokenRequest.TryGetToken(out var token))
             {
-                if(token != null)
+                if (token != null)
                 {
                     return token.Value;
                 }
             }
 
-            return null; 
+            return null;
         }
 
         private string ConstructGraphUrl(int year, int month)
         {
-            return $"{BASE_URL}?$filter=start/datetime ge '{year}-{month}-01T00:00' and end/dateTime le '{year}-{month}-31T00:00'&$select=subject,start,end";
+            var daysInMonth = DateTime.DaysInMonth(year, month);
+            return $"{BASE_URL}?$filter=start/dateTime ge '{year}-{month}-01T00:00' and end/dateTime le '{year}-{month}-{daysInMonth}T00:00'&$select=subject,start,end";
+        }
+    }
+
+    internal class GraphTokenProvider : Microsoft.Kiota.Abstractions.Authentication.IAccessTokenProvider
+    {
+        public AllowedHostsValidator AllowedHostsValidator { get; }
+
+        private readonly string _accessToken;
+
+        public GraphTokenProvider(string accessToken)
+        {
+            _accessToken = accessToken;
+        }
+
+        public Task<string> GetAuthorizationTokenAsync(Uri uri, Dictionary<string, object> additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_accessToken);
         }
     }
 }

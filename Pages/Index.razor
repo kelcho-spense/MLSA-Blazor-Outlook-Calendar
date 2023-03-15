@@ -2,8 +2,8 @@
 
  <!-- Header -->
     <header>
-        <h3 class="ms-fontSize-42 ms-fontWeight-regular">😎 Welcome to  MLSA Blazor Calendar</h3>
-        <p class="ms-fontSize-14 ms-fontWeight-regular">MLSA Calendar allows you to manage all you events within your
+        <h3 class="ms-fontSize-42 ms-fontWeight-regular">Welcome to Blazor Calendar</h3>
+        <p class="ms-fontSize-14 ms-fontWeight-regular">Blaozr Calendar allows you to manage all you events within your
             Outlook Calendar</p>
 
         <!-- NotAuthenticated Users-->
@@ -52,11 +52,9 @@
                 </DayTemplate>
             </Calendar>
        </div>
-
-
          <!-- Day Menu -->
         <div class="col-sm-12 col-md-12 col-lg-3">
-            <AddEvent SelectedDay="@selectedDay" />
+            <AddEvent SelectedDay="@selectedDay" OnEventAdded="(e) => selectedDay.Events.Add(e)" />
 
             <EventsList SelectedDay="@selectedDay" />
         </div>
@@ -70,13 +68,5 @@
     {
         Date = DateTime.Now
     };
-
-    protected override void OnInitialized()
-    {
-        AddEvent.OnEventAdded += () => 
-        {
-            StateHasChanged();
-        };
-    }
 
 }

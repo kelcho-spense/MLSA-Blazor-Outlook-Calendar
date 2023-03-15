@@ -1,4 +1,4 @@
-using System; 
+using System;
 
 namespace BlazorCalendar.Models
 {
@@ -7,29 +7,34 @@ namespace BlazorCalendar.Models
         public MicrosoftGraphEvent[] Value { get; set; }
     }
 
-    public class MicrosoftGraphEvent 
+    public class MicrosoftGraphEvent
     {
-        public string Subject {get; set;}
-        public DateTimeTimeZone Start {get; set;}
-        public DateTimeTimeZone End {get; set;}
+        public string Subject { get; set; }
+        public DateTimeTimeZone Start { get; set; }
+        public DateTimeTimeZone End { get; set; }
     }
 
-    public class DateTimeTimeZone 
+    public class DateTimeTimeZone
     {
-        public string DateTime {get; set;}
-        public string TimeZone {get; set;}
+        public string DateTime { get; set; }
+        public string TimeZone { get; set; }
 
         public DateTime ConvertToLocalDateTime()
         {
             var dateTime = System.DateTime.Parse(DateTime);
 
-            TimeZoneInfo timeZone = null; 
-            if(TimeZone == "UTC")
-                timeZone = TimeZoneInfo.Utc; 
+            TimeZoneInfo timeZone = null;
+            if (TimeZone == "UTC")
+                timeZone = TimeZoneInfo.Utc;
             else
                 timeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZone);
 
             return new DateTimeOffset(dateTime, timeZone.BaseUtcOffset).LocalDateTime;
+        }
+
+        public static implicit operator Microsoft.Graph.Models.DateTimeTimeZone(DateTimeTimeZone v)
+        {
+            throw new NotImplementedException();
         }
     }
 }
